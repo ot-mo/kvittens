@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS journal (
     reply       TEXT    NOT NULL DEFAULT '',
     completed   TEXT    NOT NULL DEFAULT '[]',
     created     TEXT    NOT NULL DEFAULT '[]',
+    source      TEXT    NOT NULL DEFAULT 'web',
     undone_at   TEXT
 );
 """

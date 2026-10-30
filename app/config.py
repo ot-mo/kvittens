@@ -24,9 +24,6 @@ class Settings:
     print_time: str
     print_days: frozenset[int]
     max_tickets: int
-    evening_time: str
-    claude_enabled: bool
-    claude_model: str
     printer_type: str  # preview | network | usb
     printer_host: str
     printer_port: int
@@ -61,10 +58,6 @@ def get_settings() -> Settings:
         print_time=_env("PRINT_TIME", "07:00"),
         print_days=print_days,
         max_tickets=int(_env("MAX_TICKETS", "5")),
-        evening_time=_env("EVENING_TIME", "20:00"),
-        # Anthropic-SDK:t läser själv ANTHROPIC_API_KEY ur miljön
-        claude_enabled=bool(_env("ANTHROPIC_API_KEY")),
-        claude_model=_env("CLAUDE_MODEL", "claude-opus-5-5"),
         printer_type=_env("PRINTER_TYPE", "preview").lower(),
         printer_host=_env("PRINTER_HOST"),
         printer_port=int(_env("PRINTER_PORT", "9100")),

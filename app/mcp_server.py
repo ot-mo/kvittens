@@ -78,9 +78,24 @@ def delete_task(task_id: int) -> str:
 
 @mcp.tool()
 def read_journal(limit: int = 14) -> list[dict]:
-    """Läs användarens kvällsdagbok, nyast först. Varje inlägg har texten, ditt svar och
-    vilka uppgifter som bockades av (completed) eller lades till (created) utifrån den."""
+    """Läs dagboken, nyast först. source "kväll" är kvällsgenomgångar: text är användarens
+    ord om dagen och reply är reflektionen och fokus som skrevs då. source "web" är korta
+    anteckningar från webbsidan. completed/created visar vilka uppgifter inlägget ändrade."""
     return journal.list_entries(limit)
+
+
+@mcp.tool()
+def write_journal_entry(text: str, reflection: str = "", complete_task_ids: list[int] | None = None,
+                        new_tasks: list[journal.NewTask] | None = None) -> dict:
+    """Spara kvällens dagboksinlägg och uppdatera listan i samma steg.
+
+    text: användarens egna ord om dagen. reflection: din korta sammanfattning och vad
+    användaren bör fokusera på kommande dagar – nästa kvällsgenomgång läser den.
+    complete_task_ids: öppna uppgifter som är klara. new_tasks: nya uppgifter att lägga till.
+    Allt i inlägget kan ångras tillsammans från webbsidan.
+    """
+    return _checked(journal.add_entry, text, reflection, complete_task_ids or [],
+                    new_tasks or [], source="kväll")
 
 
 @mcp.tool()

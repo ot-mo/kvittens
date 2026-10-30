@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "kvittens": {
+      "type": "http",
+      "url": "${KVITTENS_URL:-http://localhost:8080}/mcp",
+      "headers": {
+        "Authorization": "Bearer ${KVITTENS_API_KEY:-}"
+      }
+    }
+  }
+}

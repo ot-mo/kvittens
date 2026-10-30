@@ -8,8 +8,9 @@ och slänger den.
 - **REST-API** på `/api/...` så att andra appar och skript kan skriva till listan
 - **MCP-server** på `/mcp` så att Claude kan läsa, lägga till och skriva ut uppgifter
 - **Morgonutskrift** kl `PRINT_TIME`: de viktigaste öppna uppgifterna som inte redan sitter i skenan
-- **Kvällsdagbok**: skriv fritt om hur dagen gått, så bockar Claude av det du gjort och lägger
-  till det du säger att du ska göra
+- **Kvällsgenomgång i Claude Code**: berätta vad du gjort idag, så läser Claude dina
+  projektchattar, uppdaterar listan och bestämmer vad du ska fokusera på
+- **Dagbok** med kvällsgenomgångarna och dina egna anteckningar
 
 ## Vad hamnar på morgonbongarna?
 
@@ -18,30 +19,37 @@ Försenade och dagens uppgifter kommer först, sedan sorteras resten efter prior
 Högst `MAX_TICKETS` per morgon. En lapp som redan sitter i skenan skrivs inte ut igen.
 Om du tappar bort en lapp kan du skriva ut den igen med 🖨-knappen.
 
-## Kvällsdagboken
+## Kvällsgenomgången i Claude Code
 
-Efter `EVENING_TIME` (standard 20:00) visar webbsidan en kvällsruta, "Hur gick dagen?", om du
-inte redan skrivit något samma dag. Du kan också alltid skriva under fliken **Dagbok**.
+Listan sköts av en kvällssession i Claude-appen (Code-fliken), så du behöver nästan aldrig
+skriva uppgifter själv. Ingen API-nyckel behövs, det körs på din vanliga Claude-prenumeration.
 
-Texten skickas till Claude tillsammans med dina öppna uppgifter. Claude svarar kort och:
+1. Öppna en ny session i Kvittens-mappen och skriv `/kvall`, gärna direkt följt av vad du
+   gjort idag. Till exempel: `/kvall lödde klart förstärkaren och skickade två ansökningar`.
+2. Sessionen läser listan, dagboken och dina projektchattar i sidomenyn, alltså de som är
+   fästa och de i grupperna Programing Projects, Electronics Projects, Creative projects
+   och Life projects.
+3. Den bockar av det du gjort, lägger till konkreta nästa steg och bestämmer 1–3 saker
+   att fokusera på. Imorgon bitti skrivs de ut som bongar.
+4. Vill du ändra något säger du bara det i chatten.
 
-- bockar av uppgifter som texten tydligt säger är klara
-- lägger till nya uppgifter som du säger att du ska göra ("imorgon måste jag ..."), med
-  deadline om du nämner en dag
+Instruktionerna finns i [`.claude/skills/kvall/SKILL.md`](.claude/skills/kvall/SKILL.md),
+och kopplingen till servern i [`.mcp.json`](.mcp.json). Sätt de här två miljövariablerna
+i Windows, så att Claude Code hittar servern:
 
-Vad som ändrades visas under inlägget. Har Claude missförstått något trycker du **Ångra**.
-Då återställs ändringarna, men texten ligger kvar i dagboken. Alla inlägg sparas, så att du
-kan bläddra bakåt och Claude kan läsa dem via MCP.
+```
+KVITTENS_URL=http://<serverns-ip>:8080
+KVITTENS_API_KEY=<samma som API_KEY i .env>
+```
 
-Det kräver en `ANTHROPIC_API_KEY` från [console.anthropic.com](https://console.anthropic.com).
-Utan nyckel sparas texten bara som dagbok. Modellen väljs med `CLAUDE_MODEL`, och standard
-är `claude-opus-5-5`. Ett inlägg kostar bara några öre. Om Claude av säkerhetsskäl avböjer en
-förfrågan, försöker API:t automatiskt igen med en annan modell (`fallbacks: "default"`).
+Varje genomgång sparas i dagboken (fliken **Dagbok** på webbsidan) tillsammans med vad som
+ändrades. Där finns också en **Ångra**-knapp. Under dagen kan du skriva korta anteckningar
+i samma flik, och kvällssessionen läser dem.
 
 ## Kom igång på hemmaservern (Docker)
 
 ```bash
-cp .env.example .env      # fyll i API_KEY och ANTHROPIC_API_KEY
+cp .env.example .env      # fyll i API_KEY
 docker compose up -d --build
 ```
 
@@ -77,10 +85,11 @@ Använder du 58 mm-papper sätter du `PAPER_WIDTH_PX=384`.
 
 ## Koppla Claude till listan
 
-**Claude Code** (fungerar direkt i hemnätverket):
+**Claude Code** (fungerar direkt i hemnätverket): Sessioner i Kvittens-mappen kopplas upp
+automatiskt via `.mcp.json`. Vill du nå listan från alla sessioner lägger du till den en gång:
 
 ```bash
-claude mcp add --transport http kvittens http://<serverns-ip>:8080/mcp --header "Authorization: Bearer <API_KEY>"
+claude mcp add --scope user --transport http kvittens http://<serverns-ip>:8080/mcp --header "Authorization: Bearer <API_KEY>"
 ```
 
 Sedan kan du säga till exempel: *"lägg till att jag ska ringa Skatteverket imorgon, hög prio"*
@@ -92,7 +101,7 @@ Tailscale Funnel. Connectors stödjer inte egna headers, så det kräver också 
 Det är ett naturligt nästa steg att bygga.
 
 MCP-verktyg: `list_tasks`, `add_task`, `update_task`, `complete_task`, `reopen_task`,
-`delete_task`, `read_journal`, `preview_morning_tickets`, `print_tickets`.
+`delete_task`, `read_journal`, `write_journal_entry`, `preview_morning_tickets`, `print_tickets`.
 
 ## REST-API för andra appar
 
@@ -121,7 +130,7 @@ curl http://server:8080/api/tasks -H "X-API-Key: $KEY"
 | GET    | `/api/morning`                | Nästa utskriftstid och vilka bongar som kommer |
 | POST   | `/api/morning/print`          | Kör morgonutskriften direkt                  |
 | GET    | `/api/journal`                | Dagboksinlägg, nyast först                   |
-| POST   | `/api/journal`                | Nytt inlägg `{"text": "..."}`, Claude tolkar |
-| POST   | `/api/journal/{id}/undo`      | Ångra det Claude ändrade                     |
+| POST   | `/api/journal`                | Ny anteckning `{"text": "..."}`             |
+| POST   | `/api/journal/{id}/undo`      | Ångra ändringarna från ett inlägg            |
 
 Prioritet: 1 = brådskande, 2 = hög, 3 = normal, 4 = låg. Projektet visas som "BORD" på bongen.

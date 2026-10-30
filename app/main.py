@@ -183,7 +183,7 @@ async def _print(selected: list[dict]) -> list[int]:
         raise HTTPException(502, f"Kunde inte skriva ut: {e}")
 
 
-# ---------- Kvällsdagbok ----------
+# ---------- Dagbok ----------
 
 class JournalIn(BaseModel):
     text: str = Field(min_length=1, max_length=20000)
@@ -191,22 +191,12 @@ class JournalIn(BaseModel):
 
 @app.get("/api/journal", dependencies=[api])
 def list_journal(limit: int = 30):
-    s = get_settings()
-    return {
-        "evening_time": s.evening_time,
-        "today": tasks.today().isoformat(),
-        "has_entry_today": journal.has_entry_today(),
-        "claude": s.claude_enabled,
-        "entries": journal.list_entries(limit),
-    }
+    return journal.list_entries(limit)
 
 
 @app.post("/api/journal", dependencies=[api], status_code=201)
-async def add_journal(body: JournalIn):
-    try:
-        return await asyncio.to_thread(journal.add_entry, body.text)
-    except ValueError as e:
-        raise HTTPException(422, str(e))
+def add_journal(body: JournalIn):
+    return _run(lambda: journal.add_entry(body.text, source="web"))
 
 
 @app.post("/api/journal/{entry_id}/undo", dependencies=[api])
