@@ -5,7 +5,7 @@ om projekt i kvällschatten så läggs de till här.
 
 Senaste veckogenomgång: aldrig
 
-**Regel:** högst 3 projekt under Aktiva. Nya idéer hamnar under Idéer tills ett aktivt
+**Regel:** högst 5 projekt under Aktiva. Nya idéer hamnar under Idéer tills ett aktivt
 projekt är klart eller pausas. Målet är att göra klart, inte att börja på nytt.
 
 ## Aktiva
@@ -22,9 +22,10 @@ projekt är klart eller pausas. Målet är att göra klart, inte att börja på 
 
 ### Thesis
 - Kategori: Livet
-- Klart när: thesisen om LLM-syntetiserad supervisory control är skriven och försvarad
+- Klart när: exjobbet är inlämnat och presenterat, i januari 2027
+- Deadlines: tester och benchmarking klara runt 2026-11-30, inlämning och presentation i januari 2027
 - Status: VM 103 i homelabbet kör simuleringarna (v4_low_run1–3 klara). Champions presterar lika bra eller bättre än Weirs TD-MPC.
-- Nästa steg: skriv ner jämförelsen mot TD-MPC (tabell + plot) och mejla Weir om resultatet
+- Nästa steg: skriv ner jämförelsen mot TD-MPC (tabell + plot), mejla Weir om resultatet och planera vilka tester som återstår fram till 30 nov
 - Källor: Proxmox, Linux files, and Docker containers (local_b8d0d69c), berättat i kvällschatten
 - Senast rörd: 2026-10-30
 
@@ -44,6 +45,22 @@ projekt är klart eller pausas. Målet är att göra klart, inte att börja på 
 - Källor: Plan and start GNOMON Phase 1 from p0-done (local_cd725928), GNOMON integrator (local_1be153ad)
 - Senast rörd: 2026-10-30
 
+### Homelab
+- Kategori: Programmering
+- Klart när: (oklart, fråga) servern är stabil och övervakad på Homepage
+- Status: OptiPlex med Proxmox, media-VM 102 och thesis-VM 103. Nätverkskortshänget är åtgärdat genom att TSO/GSO är avstängt.
+- Nästa steg: installera thesis-status som systemd-tjänst och lägg till ett Homepage-kort
+- Källor: Proxmox, Linux files, and Docker containers (local_b8d0d69c)
+- Senast rörd: 2026-10-30
+
+### Ender 3 / Klipper
+- Kategori: Elektronik
+- Klart när: Ender 3 V2 kör Klipper från Pi Zero 2W
+- Status: SKR Mini E3 tar inte emot firmware från SD-kortet
+- Nästa steg: kolla kortversionen, döp filen till firmware.bin, kallstarta och leta efter FIRMWARE.CUR
+- Källor: Klipper E3 board flashing issue (local_9c8e77da)
+- Senast rörd: 2026-10-28
+
 ## Pausade
 
 ### Fish assistant
@@ -54,14 +71,6 @@ projekt är klart eller pausas. Målet är att göra klart, inte att börja på 
 - Källor: berättat på webbsidan
 - Senast rörd: 2026-10-30
 
-### Homelab
-- Kategori: Programmering
-- Klart när: (oklart, fråga) servern är stabil och övervakad på Homepage
-- Status: OptiPlex med Proxmox, media-VM 102 och thesis-VM 103. Nätverkskortshänget är åtgärdat genom att TSO/GSO är avstängt.
-- Nästa steg: installera thesis-status som systemd-tjänst och lägg till ett Homepage-kort
-- Källor: Proxmox, Linux files, and Docker containers (local_b8d0d69c)
-- Senast rörd: 2026-10-30
-
 ### Cosmic Encounter-bot
 - Kategori: Programmering
 - Klart när: boten är delad i forumet
@@ -69,14 +78,6 @@ projekt är klart eller pausas. Målet är att göra klart, inte att börja på 
 - Nästa steg: sätt delning till "anyone with the link" och posta länken i forumet
 - Källor: Cosmic Encounter rules bot (local_5091d1f5)
 - Senast rörd: 2026-10-26
-
-### Ender 3 / Klipper
-- Kategori: Elektronik
-- Klart när: Ender 3 V2 kör Klipper från Pi Zero 2W
-- Status: SKR Mini E3 tar inte emot firmware från SD-kortet
-- Nästa steg: kolla kortversionen, döp filen till firmware.bin, kallstarta och leta efter FIRMWARE.CUR
-- Källor: Klipper E3 board flashing issue (local_9c8e77da)
-- Senast rörd: 2026-10-28
 
 ## Idéer
 

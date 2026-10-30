@@ -35,7 +35,7 @@ skriva uppgifter själv. Ingen API-nyckel behövs, det körs på din vanliga Cla
    att fokusera på. Imorgon bitti skrivs de ut som bongar.
 5. Vill du ändra något säger du bara det i chatten.
 
-Alla projekt samlas i [`projekt.md`](projekt.md), uppdelade i Aktiva (högst 3), Pausade,
+Alla projekt samlas i [`projekt.md`](projekt.md), uppdelade i Aktiva (högst 5), Pausade,
 Idéer och Klara, med vad som räknas som klart och vad nästa steg är. Sessionen uppdaterar
 filen varje kväll och committar den lokalt. Berätta om gamla projekt som aldrig varit i
 Claude, så läggs de också till där. En gång i veckan går sessionen igenom äldre och

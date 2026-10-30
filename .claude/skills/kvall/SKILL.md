@@ -104,7 +104,7 @@ Välj **1–3 fokusområden** för kommande dagar, normalt bland projekten under
 - balans: livsprojekt (t.ex. jobbsökning) får inte drunkna under roliga projekt
 - vad användaren säger om ork och planer
 
-Vill användaren börja på något nytt medan Aktiva är fullt (3 projekt): lägg det under Idéer
+Vill användaren börja på något nytt medan Aktiva är fullt (5 projekt): lägg det under Idéer
 och säg vänligt vilket aktivt projekt som behöver bli klart eller pausas först. Användaren
 bestämmer, men du ska påminna.
 
