@@ -138,8 +138,9 @@ morgonen om inte användaren ber om det.
 
 Uppdatera `projekt.md`: status, nästa steg och "Senast rörd" för projekten som rört sig.
 Flytta projekt mellan avsnitten när det hänt: ett klart projekt hamnar under Klara med
-datum. Behåll filens struktur och mall. Committa sedan bara den filen lokalt, utan att
-pusha: `git add projekt.md && git commit -m "Kvällsgenomgång ÅÅÅÅ-MM-DD"`. Gör samma sak
+datum. Behåll filens struktur och mall. Committa sedan bara den filen och pusha direkt
+till main: `git add projekt.md && git commit -m "Kvällsgenomgång ÅÅÅÅ-MM-DD" && git push origin main`.
+Gör samma sak
 varje gång du ändrar `projekt.md`, även när användaren ber om en ändring efter
 genomgången. Kommandona är förgodkända i `.claude/settings.json`.
 
