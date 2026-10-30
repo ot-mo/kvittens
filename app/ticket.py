@@ -117,9 +117,8 @@ def render_ticket(task: dict) -> Image.Image:
     text((W - m, y + round(44 * s)), format_date(stamp.date()), small, anchor="ra")
     y += round(84 * s)
 
-    # "Bord" = projekt
-    table = (task.get("project") or "").strip()
-    y = bar(y, f"BORD: {table.upper()}" if table else "BORD: —", _font("bold", round(30 * s)))
+    if project := (task.get("project") or "").strip():
+        y = bar(y, f"PROJEKT: {project.upper()}", _font("bold", round(30 * s)))
 
     # Själva beställningen
     title_font = _font("bold", round(50 * s))

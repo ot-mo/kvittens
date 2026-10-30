@@ -77,7 +77,7 @@ Bra uppgifter för en bong:
 
 - En sak som går att göra i ett svep, ungefär 30–120 minuter. Inte "Jobba på Gnomon".
 - Titel i imperativ, helst under 40 tecken: "Löd fast spänningsregulatorn".
-- `project`: projektets korta namn, det står som "BORD" på bongen.
+- `project`: projektets korta namn, det står som "PROJEKT" på bongen.
 - `notes`: en rad om var man börjar, t.ex. vilken fil eller session.
 - `due`: imorgon för det viktigaste fokuset, annars ingen. Prioritet 2 för fokus, 3 för
   resten.

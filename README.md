@@ -133,4 +133,4 @@ curl http://server:8080/api/tasks -H "X-API-Key: $KEY"
 | POST   | `/api/journal`                | Ny anteckning `{"text": "..."}`             |
 | POST   | `/api/journal/{id}/undo`      | Ångra ändringarna från ett inlägg            |
 
-Prioritet: 1 = brådskande, 2 = hög, 3 = normal, 4 = låg. Projektet visas som "BORD" på bongen.
+Prioritet: 1 = brådskande, 2 = hög, 3 = normal, 4 = låg. Projektet står som "PROJEKT" överst på bongen.

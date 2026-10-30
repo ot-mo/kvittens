@@ -13,7 +13,7 @@ mcp = MCPServer(
     instructions=(
         "Kvittens är användarens todo-lista. Varje morgon skrivs de viktigaste öppna "
         "uppgifterna ut som restaurangbongar på en kvittoskrivare. Prioritet: 1 = brådskande, "
-        "2 = hög, 3 = normal, 4 = låg. Projekt visas som 'bord' på bongen. Datum i formatet "
+        "2 = hög, 3 = normal, 4 = låg. Projektet står överst på bongen. Datum i formatet "
         "ÅÅÅÅ-MM-DD. Håll titlar korta – de ska få plats på en kvittolapp."
     ),
 )
