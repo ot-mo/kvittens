@@ -1,0 +1,13 @@
+services:
+  kvittens:
+    build: .
+    container_name: kvittens
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file: .env
+    volumes:
+      - ./data:/data
+    # Bara för USB-skrivare: släpp in USB-bussen i containern
+    # devices:
+    #   - /dev/bus/usb:/dev/bus/usb

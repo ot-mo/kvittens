@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kvittens</title>
+<style>
+:root {
+  --bg: #f4f1ea; --card: #fffdf8; --ink: #1d1b18; --muted: #6f6a60; --line: #ddd6c8;
+  --accent: #c2410c; --ok: #15803d; --chip: #ece6da;
+  --mono: ui-monospace, "SF Mono", Consolas, "DejaVu Sans Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #171614; --card: #211f1c; --ink: #ece8e1; --muted: #9b958a; --line: #3a3631;
+          --accent: #f97316; --ok: #4ade80; --chip: #2d2a26; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 system-ui, sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--mono); font-size: 1.6rem; margin: 0; letter-spacing: -.02em; }
+h1 span { color: var(--accent); }
+.muted { color: var(--muted); font-size: .9rem; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; border: 1px solid var(--line); background: var(--card); border-radius: 8px; padding: 6px 12px; }
+button.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); font-weight: 600; }
+button:disabled { opacity: .5; cursor: default; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-top: 16px; }
+.rail { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.rail .tickets { display: flex; gap: 6px; flex-wrap: wrap; }
+.mini { font-family: var(--mono); font-size: .8rem; background: var(--bg); border: 1px dashed var(--line); padding: 4px 8px; border-radius: 4px; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+form.add { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+form.add .full { grid-column: 1 / -1; }
+form.add input, form.add select, form.add textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+form.add textarea { min-height: 2.6rem; resize: vertical; }
+@media (max-width: 560px) { form.add { grid-template-columns: 1fr 1fr; } form.add .title { grid-column: 1 / -1; } }
+.tabs { display: flex; gap: 4px; margin: 24px 0 8px; }
+.tabs button { border: 0; background: none; padding: 6px 10px; border-radius: 6px; color: var(--muted); }
+.tabs button.on { background: var(--chip); color: var(--ink); font-weight: 600; }
+ul { list-style: none; padding: 0; margin: 0; }
+li.task { display: flex; gap: 12px; align-items: flex-start; padding: 12px 4px; border-bottom: 1px solid var(--line); }
+.num { font-family: var(--mono); color: var(--muted); font-size: .85rem; padding-top: 2px; min-width: 3.2em; }
+.body { flex: 1; min-width: 0; }
+.title { font-weight: 600; overflow-wrap: anywhere; }
+.notes { color: var(--muted); font-size: .9rem; white-space: pre-wrap; }
+.meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.chip { font-size: .75rem; padding: 1px 8px; border-radius: 99px; background: var(--chip); }
+.chip.p1 { background: var(--accent); color: #fff; } .chip.p2 { border: 1px solid var(--accent); color: var(--accent); background: none; }
+.chip.late { color: var(--accent); font-weight: 600; } .chip.rail { font-family: var(--mono); }
+.actions { display: flex; gap: 4px; flex-shrink: 0; }
+.actions button { padding: 4px 8px; font-size: .85rem; }
+.done .title { text-decoration: line-through; color: var(--muted); }
+.empty { color: var(--muted); padding: 24px 4px; }
+dialog { border: 0; border-radius: 12px; padding: 16px; background: var(--card); color: var(--ink); max-width: min(92vw, 420px); }
+dialog::backdrop { background: rgba(0,0,0,.5); }
+dialog img { width: 100%; display: block; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.2); }
+#toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+#toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>kvitt<span>ens</span></h1>
+    <span class="muted" id="status"></span>
+  </header>
+
+  <section class="panel">
+    <div class="rail">
+      <div>
+        <strong>Nästa morgonutskrift</strong> <span class="muted" id="next"></span>
+        <div class="tickets" id="upcoming" style="margin-top:8px"></div>
+      </div>
+      <button class="primary" id="printNow">Skriv ut nu</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <form class="add" id="add">
+      <input class="title full" name="title" placeholder="Ny beställning, t.ex. Ring tandläkaren" required maxlength="200">
+      <input name="project" placeholder="Bord (projekt)" list="projects">
+      <select name="priority">
+        <option value="1">1 · Brådskande</option><option value="2">2 · Hög</option>
+        <option value="3" selected>3 · Normal</option><option value="4">4 · Låg</option>
+      </select>
+      <input name="due" type="date" aria-label="Deadline">
+      <textarea class="full" name="notes" placeholder="Anteckningar (valfritt)"></textarea>
+      <button class="primary full">Lägg till</button>
+    </form>
+    <datalist id="projects"></datalist>
+  </section>
+
+  <div class="tabs">
+    <button data-tab="open" class="on">Öppna</button>
+    <button data-tab="done">Klara</button>
+  </div>
+  <ul id="list"></ul>
+</main>
+
+<dialog id="ticket"><img alt="Förhandsvisning av bong"><form method="dialog" style="margin-top:12px"><button style="width:100%">Stäng</button></form></dialog>
+<div id="toast"></div>
+
+<script>
+const PRIO = {1: "Brådskande", 2: "Hög", 3: "Normal", 4: "Låg"};
+let tab = "open";
+
+function getKey() { try { return localStorage.getItem("kvittens-key") || ""; } catch { return ""; } }
+function setKey(k) { try { localStorage.setItem("kvittens-key", k); } catch {} }
+
+async function call(method, path, body, raw = false) {
+  const headers = { "X-API-Key": getKey() };
+  if (body) headers["Content-Type"] = "application/json";
+  const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  if (res.status === 401) {
+    const k = prompt("API-nyckel (API_KEY i .env):");
+    if (k !== null) { setKey(k.trim()); return call(method, path, body, raw); }
+    throw new Error("Ingen API-nyckel");
+  }
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
+  if (raw) return res;
+  return res.status === 204 ? null : res.json();
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function dueChip(due) {
+  if (!due) return "";
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(due + "T00:00:00");
+  const diff = Math.round((d - today) / 864e5);
+  const label = diff === 0 ? "idag" : diff === 1 ? "imorgon" : diff < 0 ? `försenad ${-diff} d`
+    : d.toLocaleDateString("sv-SE", { weekday: "short", day: "numeric", month: "short" });
+  return `<span class="chip ${diff < 0 ? "late" : ""}">⏱ ${label}</span>`;
+}
+
+function row(t) {
+  const open = t.status === "open";
+  return `<li class="task ${open ? "" : "done"}">
+    <span class="num">#${String(t.id).padStart(4, "0")}</span>
+    <div class="body">
+      <div class="title">${esc(t.title)}</div>
+      ${t.notes ? `<div class="notes">${esc(t.notes)}</div>` : ""}
+      <div class="meta">
+        ${t.priority <= 2 ? `<span class="chip p${t.priority}">${PRIO[t.priority]}</span>` : ""}
+        ${t.project ? `<span class="chip">${esc(t.project)}</span>` : ""}
+        ${dueChip(t.due)}
+        ${open && t.printed_at ? `<span class="chip rail">i skenan</span>` : ""}
+        ${t.source && t.source !== "web" ? `<span class="chip">från ${esc(t.source)}</span>` : ""}
+      </div>
+    </div>
+    <div class="actions">
+      ${open ? `<button data-act="done" data-id="${t.id}" title="Klar">✓</button>
+                <button data-act="print" data-id="${t.id}" title="Skriv ut bong">🖨</button>
+                <button data-act="view" data-id="${t.id}" title="Visa bong">👁</button>`
+             : `<button data-act="reopen" data-id="${t.id}" title="Öppna igen">↺</button>`}
+      <button data-act="delete" data-id="${t.id}" title="Ta bort">✕</button>
+    </div>
+  </li>`;
+}
+
+async function refresh() {
+  const [list, morning] = await Promise.all([call("GET", `/api/tasks?status=${tab}`), call("GET", "/api/morning")]);
+  document.getElementById("list").innerHTML = list.length ? list.map(row).join("")
+    : `<li class="empty">${tab === "open" ? "Inga öppna beställningar. Köket är tomt." : "Inget klart än."}</li>`;
+  const when = new Date(morning.next_run);
+  document.getElementById("next").textContent =
+    `${when.toLocaleDateString("sv-SE", { weekday: "long" })} ${when.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}` +
+    ` · ${morning.tasks.length} av max ${morning.max_tickets} bongar`;
+  document.getElementById("upcoming").innerHTML = morning.tasks.map(t =>
+    `<span class="mini">#${String(t.id).padStart(4, "0")} ${esc(t.title)}</span>`).join("") || `<span class="muted">Inget nytt att skriva ut</span>`;
+  document.getElementById("printNow").disabled = !morning.tasks.length;
+  document.getElementById("status").textContent = `skrivare: ${morning.printer}`;
+  if (tab === "open") document.getElementById("projects").innerHTML =
+    [...new Set(list.map(t => t.project).filter(Boolean))].map(p => `<option value="${esc(p)}">`).join("");
+}
+
+document.getElementById("add").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(e.target));
+  try {
+    await call("POST", "/api/tasks", { ...f, priority: +f.priority, due: f.due || null, source: "web" });
+    e.target.reset(); e.target.title.focus(); refresh();
+  } catch (err) { toast(err.message); }
+});
+
+document.getElementById("list").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const id = b.dataset.id;
+  try {
+    if (b.dataset.act === "view") {
+      const res = await call("GET", `/api/tasks/${id}/ticket.png`, null, true);
+      const dlg = document.getElementById("ticket");
+      dlg.querySelector("img").src = URL.createObjectURL(await res.blob());
+      return dlg.showModal();
+    }
+    if (b.dataset.act === "delete" && !confirm("Ta bort uppgiften?")) return;
+    if (b.dataset.act === "done") await call("POST", `/api/tasks/${id}/done`);
+    if (b.dataset.act === "reopen") await call("POST", `/api/tasks/${id}/reopen`);
+    if (b.dataset.act === "delete") await call("DELETE", `/api/tasks/${id}`);
+    if (b.dataset.act === "print") { await call("POST", `/api/tasks/${id}/print`); toast("Bong utskriven"); }
+    refresh();
+  } catch (err) { toast(err.message); }
+});
+
+document.getElementById("printNow").addEventListener("click", async () => {
+  try { const r = await call("POST", "/api/morning/print"); toast(`${r.printed.length} bongar utskrivna`); refresh(); }
+  catch (err) { toast(err.message); }
+});
+
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
+  tab = b.dataset.tab; refresh();
+}));
+
+refresh().catch(err => toast(err.message));
+setInterval(() => document.visibilityState === "visible" && refresh().catch(() => {}), 30000);
+</script>
+</body>
+</html>
