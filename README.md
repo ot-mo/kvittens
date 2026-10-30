@@ -29,9 +29,18 @@ skriva uppgifter själv. Ingen API-nyckel behövs, det körs på din vanliga Cla
 2. Sessionen läser listan, dagboken och dina projektchattar i sidomenyn, alltså de som är
    fästa och de i grupperna Programing Projects, Electronics Projects, Creative projects
    och Life projects.
-3. Den bockar av det du gjort, lägger till konkreta nästa steg och bestämmer 1–3 saker
+3. När nästa steg i ett projekt är oklart frågar den projektets egen session, högst 3 per
+   kväll. Den sessionen svarar bara, den ändrar inget.
+4. Den bockar av det du gjort, lägger till konkreta nästa steg och bestämmer 1–3 saker
    att fokusera på. Imorgon bitti skrivs de ut som bongar.
-4. Vill du ändra något säger du bara det i chatten.
+5. Vill du ändra något säger du bara det i chatten.
+
+Alla projekt samlas i [`projekt.md`](projekt.md), uppdelade i Aktiva (högst 3), Pausade,
+Idéer och Klara, med vad som räknas som klart och vad nästa steg är. Sessionen uppdaterar
+filen varje kväll och committar den lokalt. Berätta om gamla projekt som aldrig varit i
+Claude, så läggs de också till där. En gång i veckan går sessionen igenom äldre och
+arkiverade chattar och föreslår ett projekt som har somnat men är värt att göra klart.
+Systemet ska hjälpa dig göra klart saker, inte börja på nya.
 
 Instruktionerna finns i [`.claude/skills/kvall/SKILL.md`](.claude/skills/kvall/SKILL.md),
 och kopplingen till servern i [`.mcp.json`](.mcp.json). Sätt de här två miljövariablerna
