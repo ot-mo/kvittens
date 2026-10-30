@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add projekt.md)",
+      "Bash(git commit *)",
+      "PowerShell(git add projekt.md)",
+      "PowerShell(git commit *)"
+    ]
+  }
+}
