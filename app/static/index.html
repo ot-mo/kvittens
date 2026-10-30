@@ -54,6 +54,18 @@ li.task { display: flex; gap: 12px; align-items: flex-start; padding: 12px 4px; 
 dialog { border: 0; border-radius: 12px; padding: 16px; background: var(--card); color: var(--ink); max-width: min(92vw, 420px); }
 dialog::backdrop { background: rgba(0,0,0,.5); }
 dialog img { width: 100%; display: block; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.2); }
+.evening { border-color: var(--accent); }
+.evening h2 { font-family: var(--mono); font-size: 1.05rem; margin: 0 0 4px; }
+.evening h2 span { color: var(--accent); }
+form.journal textarea { width: 100%; min-height: 7rem; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); resize: vertical; line-height: 1.5; }
+form.journal .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.entry { padding: 16px 4px; border-bottom: 1px solid var(--line); }
+.entry .when { font-family: var(--mono); font-size: .8rem; color: var(--muted); }
+.entry .text { white-space: pre-wrap; margin: 4px 0 8px; overflow-wrap: anywhere; }
+.entry .reply { border-left: 3px solid var(--accent); padding: 2px 0 2px 10px; color: var(--muted); font-style: italic; }
+.entry .changes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+.entry .changes .undone { text-decoration: line-through; opacity: .6; }
+.entry.fresh { background: var(--chip); border-radius: 8px; padding-left: 12px; padding-right: 12px; }
 #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 16px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; }
 #toast.show { opacity: 1; }
 </style>
@@ -64,6 +76,12 @@ dialog img { width: 100%; display: block; background: #fff; box-shadow: 0 2px 12
     <h1>kvitt<span>ens</span></h1>
     <span class="muted" id="status"></span>
   </header>
+
+  <section class="panel evening" id="evening" hidden>
+    <h2>kvälls<span>bong</span> · Hur gick dagen?</h2>
+    <p class="muted" style="margin:0 0 10px">Skriv fritt. Claude bockar av det du gjort och lägger till det du säger att du ska göra.</p>
+    <div id="eveningSlot"></div>
+  </section>
 
   <section class="panel">
     <div class="rail">
@@ -93,8 +111,21 @@ dialog img { width: 100%; display: block; background: #fff; box-shadow: 0 2px 12
   <div class="tabs">
     <button data-tab="open" class="on">Öppna</button>
     <button data-tab="done">Klara</button>
+    <button data-tab="journal">Dagbok</button>
   </div>
   <ul id="list"></ul>
+  <section id="journalView" hidden>
+    <div id="journalSlot" class="panel" style="margin-top:0">
+      <form class="journal" id="journalForm">
+        <textarea name="text" placeholder="Idag hann jag diska och ringa tandläkaren, men fakturan får vänta. Imorgon måste jag köpa present till mamma…" required></textarea>
+        <div class="row">
+          <span class="muted" id="claudeStatus"></span>
+          <button class="primary" id="journalSend">Skicka</button>
+        </div>
+      </form>
+    </div>
+    <ul id="entries"></ul>
+  </section>
 </main>
 
 <dialog id="ticket"><img alt="Förhandsvisning av bong"><form method="dialog" style="margin-top:12px"><button style="width:100%">Stäng</button></form></dialog>
@@ -164,8 +195,48 @@ function row(t) {
   </li>`;
 }
 
+let freshId = null;
+
+function entryRow(e) {
+  const d = new Date(e.created_at);
+  const when = `${d.toLocaleDateString("sv-SE", { weekday: "short", day: "numeric", month: "short" })} · ${d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}`;
+  const cls = e.undone_at ? "undone" : "";
+  const chips = [
+    ...e.completed.map(t => `<span class="chip ${cls}">✓ ${esc(t.title)}</span>`),
+    ...e.created.map(t => `<span class="chip ${cls}">+ ${esc(t.title)}</span>`),
+  ].join("");
+  const undo = !chips ? "" : e.undone_at ? `<span class="muted">ångrat</span>`
+    : `<button data-undo="${e.id}" title="Ångra det Claude ändrade">Ångra</button>`;
+  return `<li class="entry ${e.id === freshId ? "fresh" : ""}">
+    <div class="when">${when}</div>
+    <div class="text">${esc(e.text)}</div>
+    ${e.reply ? `<div class="reply">${esc(e.reply)}</div>` : ""}
+    ${chips ? `<div class="changes">${chips}${undo}</div>` : ""}
+  </li>`;
+}
+
+function renderJournal(jr) {
+  const now = new Date();
+  const [h, m] = jr.evening_time.split(":").map(Number);
+  const evening = !jr.has_entry_today && now.getHours() * 60 + now.getMinutes() >= h * 60 + m;
+  // Samma formulär används överallt; på kvällen flyttas det upp till kvällsrutan
+  const form = document.getElementById("journalForm");
+  const slot = document.getElementById(evening ? "eveningSlot" : "journalSlot");
+  if (form.parentElement !== slot) slot.appendChild(form);
+  document.getElementById("evening").hidden = !evening;
+  document.getElementById("journalSlot").hidden = evening;
+  document.getElementById("claudeStatus").textContent = jr.claude
+    ? "Claude läser och uppdaterar listan" : "Sparas bara som dagbok (ingen Claude-nyckel)";
+  document.getElementById("entries").innerHTML = jr.entries.map(entryRow).join("")
+    || `<li class="empty">Inga inlägg än. Dagboken fylls på varje kväll.</li>`;
+}
+
 async function refresh() {
-  const [list, morning] = await Promise.all([call("GET", `/api/tasks?status=${tab}`), call("GET", "/api/morning")]);
+  const status = tab === "journal" ? "open" : tab;
+  const [list, morning, jr] = await Promise.all([
+    call("GET", `/api/tasks?status=${status}`), call("GET", "/api/morning"), call("GET", "/api/journal"),
+  ]);
+  renderJournal(jr);
   document.getElementById("list").innerHTML = list.length ? list.map(row).join("")
     : `<li class="empty">${tab === "open" ? "Inga öppna beställningar. Köket är tomt." : "Inget klart än."}</li>`;
   const when = new Date(morning.next_run);
@@ -213,10 +284,35 @@ document.getElementById("printNow").addEventListener("click", async () => {
   catch (err) { toast(err.message); }
 });
 
-document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
-  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x === b));
-  tab = b.dataset.tab; refresh();
-}));
+document.getElementById("journalForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = document.getElementById("journalSend");
+  btn.disabled = true; btn.textContent = "Claude läser…";
+  try {
+    const entry = await call("POST", "/api/journal", { text: e.target.text.value });
+    e.target.reset(); freshId = entry.id;
+    selectTab("journal");
+    toast(`${entry.completed.length} avbockade · ${entry.created.length} nya`);
+  } catch (err) { toast(err.message); }
+  finally { btn.disabled = false; btn.textContent = "Skicka"; }
+});
+
+document.getElementById("entries").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-undo]"); if (!b) return;
+  if (!confirm("Ångra det Claude bockade av och lade till? Texten sparas kvar.")) return;
+  try { await call("POST", `/api/journal/${b.dataset.undo}/undo`); toast("Ångrat"); refresh(); }
+  catch (err) { toast(err.message); }
+});
+
+function selectTab(name) {
+  tab = name;
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("on", x.dataset.tab === name));
+  document.getElementById("list").hidden = name === "journal";
+  document.getElementById("journalView").hidden = name !== "journal";
+  refresh().catch(err => toast(err.message));
+}
+
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => selectTab(b.dataset.tab)));
 
 refresh().catch(err => toast(err.message));
 setInterval(() => document.visibilityState === "visible" && refresh().catch(() => {}), 30000);

@@ -24,6 +24,17 @@ CREATE TABLE IF NOT EXISTS tasks (
     done_at     TEXT,
     printed_at  TEXT
 );
+
+CREATE TABLE IF NOT EXISTS journal (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    day         TEXT    NOT NULL,
+    text        TEXT    NOT NULL,
+    created_at  TEXT    NOT NULL,
+    reply       TEXT    NOT NULL DEFAULT '',
+    completed   TEXT    NOT NULL DEFAULT '[]',
+    created     TEXT    NOT NULL DEFAULT '[]',
+    undone_at   TEXT
+);
 """
 
 
@@ -118,11 +129,14 @@ def update_task(task_id: int, **changes) -> dict | None:
     return get_task(task_id)
 
 
-def set_done(task_id: int, done: bool = True) -> dict | None:
+def set_done(task_id: int, done: bool = True, keep_printed: bool = False) -> dict | None:
     with connect() as conn:
         if done:
             conn.execute("UPDATE tasks SET status = 'done', done_at = ? WHERE id = ?",
                          (now().isoformat(timespec="seconds"), task_id))
+        elif keep_printed:
+            # Ångrad avbockning: lappen sitter troligen kvar i skenan
+            conn.execute("UPDATE tasks SET status = 'open', done_at = NULL WHERE id = ?", (task_id,))
         else:
             # Återöppnad uppgift har ingen lapp i skenan längre, så den får skrivas ut igen.
             conn.execute("UPDATE tasks SET status = 'open', done_at = NULL, printed_at = NULL"

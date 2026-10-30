@@ -1,7 +1,6 @@
 """Inställningar som läses från miljövariabler (se .env.example)."""
 
 import os
-import secrets
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -21,12 +20,13 @@ def _hex_or_int(value: str) -> int:
 class Settings:
     data_dir: Path
     api_key: str
-    secret: str
-    public_url: str
     timezone: str
     print_time: str
     print_days: frozenset[int]
     max_tickets: int
+    evening_time: str
+    claude_enabled: bool
+    claude_model: str
     printer_type: str  # preview | network | usb
     printer_host: str
     printer_port: int
@@ -45,16 +45,6 @@ class Settings:
         return self.data_dir / "tickets"
 
 
-def _load_secret(data_dir: Path) -> str:
-    """Hemlighet för QR-länkarna. Skapas automatiskt första gången."""
-    if value := _env("SECRET"):
-        return value
-    path = data_dir / "secret.key"
-    if not path.exists():
-        path.write_text(secrets.token_hex(32))
-    return path.read_text().strip()
-
-
 @lru_cache
 def get_settings() -> Settings:
     data_dir = Path(_env("DATA_DIR", "data")).resolve()
@@ -67,12 +57,14 @@ def get_settings() -> Settings:
     return Settings(
         data_dir=data_dir,
         api_key=_env("API_KEY"),
-        secret=_load_secret(data_dir),
-        public_url=_env("PUBLIC_URL").rstrip("/"),
         timezone=_env("TZ", "Europe/Stockholm"),
         print_time=_env("PRINT_TIME", "07:00"),
         print_days=print_days,
         max_tickets=int(_env("MAX_TICKETS", "5")),
+        evening_time=_env("EVENING_TIME", "20:00"),
+        # Anthropic-SDK:t läser själv ANTHROPIC_API_KEY ur miljön
+        claude_enabled=bool(_env("ANTHROPIC_API_KEY")),
+        claude_model=_env("CLAUDE_MODEL", "claude-opus-5-5"),
         printer_type=_env("PRINTER_TYPE", "preview").lower(),
         printer_host=_env("PRINTER_HOST"),
         printer_port=int(_env("PRINTER_PORT", "9100")),

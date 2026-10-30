@@ -5,19 +5,18 @@ import hmac
 import io
 import logging
 from contextlib import asynccontextmanager
-from html import escape
 from pathlib import Path
 from typing import Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, Response
+from fastapi.responses import FileResponse, Response
 from mcp.server.transport_security import TransportSecuritySettings
 from pydantic import BaseModel, Field
 
-from . import printer, scheduler, tasks
+from . import journal, printer, scheduler, tasks
 from .config import get_settings
 from .mcp_server import mcp
-from .ticket import done_token, render_ticket
+from .ticket import render_ticket
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 log = logging.getLogger("kvittens")
@@ -184,46 +183,43 @@ async def _print(selected: list[dict]) -> list[int]:
         raise HTTPException(502, f"Kunde inte skriva ut: {e}")
 
 
+# ---------- Kvällsdagbok ----------
+
+class JournalIn(BaseModel):
+    text: str = Field(min_length=1, max_length=20000)
+
+
+@app.get("/api/journal", dependencies=[api])
+def list_journal(limit: int = 30):
+    s = get_settings()
+    return {
+        "evening_time": s.evening_time,
+        "today": tasks.today().isoformat(),
+        "has_entry_today": journal.has_entry_today(),
+        "claude": s.claude_enabled,
+        "entries": journal.list_entries(limit),
+    }
+
+
+@app.post("/api/journal", dependencies=[api], status_code=201)
+async def add_journal(body: JournalIn):
+    try:
+        return await asyncio.to_thread(journal.add_entry, body.text)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+
+@app.post("/api/journal/{entry_id}/undo", dependencies=[api])
+def undo_journal(entry_id: int):
+    entry = journal.undo_entry(entry_id)
+    if entry is None:
+        raise HTTPException(404, "Inlägget finns inte")
+    return entry
+
+
 @app.get("/health")
 def health():
     return {"ok": True}
-
-
-# ---------- QR-koden på bongen ----------
-
-def _page(title: str, body: str) -> HTMLResponse:
-    return HTMLResponse(f"""<!doctype html><html lang="sv"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>{escape(title)}</title>
-<style>body{{font:18px/1.5 system-ui,sans-serif;max-width:28rem;margin:3rem auto;padding:0 16px;
-background:#f6f3ec;color:#1d1b18}}h1{{font-size:1.5rem}}button{{font:inherit;font-weight:600;
-padding:.8rem 1.4rem;border:0;border-radius:8px;background:#1d1b18;color:#fff;width:100%}}
-.ticket{{background:#fff;padding:1rem;border:1px dashed #999;margin:1rem 0}}
-@media(prefers-color-scheme:dark){{body{{background:#1b1a18;color:#eee}}.ticket{{background:#262421}}
-button{{background:#eee;color:#111}}}}</style></head><body>{body}</body></html>""")
-
-
-def _task_for_link(task_id: int, t: str) -> dict:
-    if not hmac.compare_digest(t, done_token(task_id)):
-        raise HTTPException(403, "Ogiltig länk")
-    return _found(tasks.get_task(task_id))
-
-
-@app.get("/done/{task_id}", response_class=HTMLResponse)
-def done_page(task_id: int, t: str = ""):
-    task = _task_for_link(task_id, t)
-    ticket = f'<div class="ticket"><b>#{task_id:04d}</b><br>{escape(task["title"])}</div>'
-    if task["status"] == "done":
-        return _page("Redan klar", f"<h1>Redan klar ✓</h1>{ticket}<p>Släng lappen.</p>")
-    form = f'<form method="post" action="/done/{task_id}?t={escape(t)}"><button>Markera som klar</button></form>'
-    return _page("Klar?", f"<h1>Klar med bongen?</h1>{ticket}{form}")
-
-
-@app.post("/done/{task_id}", response_class=HTMLResponse)
-def done_submit(task_id: int, t: str = ""):
-    task = _task_for_link(task_id, t)
-    tasks.set_done(task_id, True)
-    return _page("Klart!", f'<h1>Klart! ✓</h1><div class="ticket"><s>{escape(task["title"])}</s></div>'
-                           "<p>Riv ner lappen och släng den.</p>")
 
 
 # ---------- Webbgränssnitt ----------

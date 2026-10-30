@@ -1,16 +1,13 @@
 """Ritar en uppgift som en restaurangbong (svartvit bild i skrivarens bredd).
 
-Bongen skrivs ut som bild i stället för text, så att åäö, stora rubriker och
-QR-koden ser likadana ut oavsett skrivarmodell.
+Bongen skrivs ut som bild i stället för text, så att åäö och stora rubriker
+ser likadana ut oavsett skrivarmodell.
 """
 
-import hashlib
-import hmac
 from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
-import qrcode
 from PIL import Image, ImageDraw, ImageFont
 
 from .config import get_settings
@@ -42,16 +39,6 @@ def _font(kind: str, size: int) -> ImageFont.FreeTypeFont:
             if path.exists():
                 return ImageFont.truetype(str(path), size)
     return ImageFont.load_default(size)
-
-
-def done_token(task_id: int) -> str:
-    key = get_settings().secret.encode()
-    return hmac.new(key, f"done:{task_id}".encode(), hashlib.sha256).hexdigest()[:20]
-
-
-def done_url(task_id: int) -> str | None:
-    base = get_settings().public_url
-    return f"{base}/done/{task_id}?t={done_token(task_id)}" if base else None
 
 
 def format_date(d: date) -> str:
@@ -163,22 +150,6 @@ def render_ticket(task: dict) -> Image.Image:
     if due_label:
         text((m, y), f"DEADLINE: {due_label}", _font("bold", round(34 * s)))
         y += round(48 * s)
-
-    # QR-kod som bockar av uppgiften
-    if url := done_url(task["id"]):
-        y += round(6 * s)
-        qr = qrcode.QRCode(border=0, box_size=1, error_correction=qrcode.constants.ERROR_CORRECT_M)
-        qr.add_data(url)
-        qr.make(fit=True)
-        size = round(170 * s)
-        qr_img = qr.make_image(fill_color="black", back_color="white").convert("L")
-        qr_img = qr_img.resize((size, size), Image.NEAREST)
-        img.paste(qr_img, (m, y))
-        tx = m + size + round(20 * s)
-        text((tx, y + round(30 * s)), "Klar?", _font("bold", round(36 * s)))
-        text((tx, y + round(80 * s)), "Skanna koden,", small)
-        text((tx, y + round(112 * s)), "släng lappen.", small)
-        y += size + round(16 * s)
 
     source = task.get("source") or ""
     footer = f"kvittens{' · från ' + source if source else ''}"

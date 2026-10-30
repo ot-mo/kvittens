@@ -6,7 +6,7 @@ from typing import Literal
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
-from . import printer, tasks
+from . import journal, printer, tasks
 
 mcp = MCPServer(
     name="kvittens",
@@ -74,6 +74,13 @@ def delete_task(task_id: int) -> str:
     if not tasks.delete_task(task_id):
         raise ToolError(f"Det finns ingen uppgift med id {task_id}")
     return f"Uppgift {task_id} borttagen"
+
+
+@mcp.tool()
+def read_journal(limit: int = 14) -> list[dict]:
+    """Läs användarens kvällsdagbok, nyast först. Varje inlägg har texten, ditt svar och
+    vilka uppgifter som bockades av (completed) eller lades till (created) utifrån den."""
+    return journal.list_entries(limit)
 
 
 @mcp.tool()

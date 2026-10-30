@@ -8,7 +8,8 @@ och slänger den.
 - **REST-API** på `/api/...` så att andra appar och skript kan skriva till listan
 - **MCP-server** på `/mcp` så att Claude kan läsa, lägga till och skriva ut uppgifter
 - **Morgonutskrift** kl `PRINT_TIME`: de viktigaste öppna uppgifterna som inte redan sitter i skenan
-- **QR-kod på varje bong**: skanna med mobilen för att markera uppgiften som klar
+- **Kvällsdagbok**: skriv fritt om hur dagen gått, så bockar Claude av det du gjort och lägger
+  till det du säger att du ska göra
 
 ## Vad hamnar på morgonbongarna?
 
@@ -17,15 +18,35 @@ Försenade och dagens uppgifter kommer först, sedan sorteras resten efter prior
 Högst `MAX_TICKETS` per morgon. En lapp som redan sitter i skenan skrivs inte ut igen.
 Om du tappar bort en lapp kan du skriva ut den igen med 🖨-knappen.
 
+## Kvällsdagboken
+
+Efter `EVENING_TIME` (standard 20:00) visar webbsidan en kvällsruta, "Hur gick dagen?", om du
+inte redan skrivit något samma dag. Du kan också alltid skriva under fliken **Dagbok**.
+
+Texten skickas till Claude tillsammans med dina öppna uppgifter. Claude svarar kort och:
+
+- bockar av uppgifter som texten tydligt säger är klara
+- lägger till nya uppgifter som du säger att du ska göra ("imorgon måste jag ..."), med
+  deadline om du nämner en dag
+
+Vad som ändrades visas under inlägget. Har Claude missförstått något trycker du **Ångra**.
+Då återställs ändringarna, men texten ligger kvar i dagboken. Alla inlägg sparas, så att du
+kan bläddra bakåt och Claude kan läsa dem via MCP.
+
+Det kräver en `ANTHROPIC_API_KEY` från [console.anthropic.com](https://console.anthropic.com).
+Utan nyckel sparas texten bara som dagbok. Modellen väljs med `CLAUDE_MODEL`, och standard
+är `claude-opus-5-5`. Ett inlägg kostar bara några öre. Om Claude av säkerhetsskäl avböjer en
+förfrågan, försöker API:t automatiskt igen med en annan modell (`fallbacks: "default"`).
+
 ## Kom igång på hemmaservern (Docker)
 
 ```bash
-cp .env.example .env      # fyll i API_KEY och PUBLIC_URL
+cp .env.example .env      # fyll i API_KEY och ANTHROPIC_API_KEY
 docker compose up -d --build
 ```
 
-Öppna sedan `http://<serverns-ip>:8080`. All data ligger i `./data`: databasen, de
-renderade bongarna och hemligheten för QR-länkarna. Det är den mappen du ska ta backup på.
+Öppna sedan `http://<serverns-ip>:8080`. All data ligger i `./data`: databasen med
+uppgifter och dagbok, samt de renderade bongarna. Det är den mappen du ska ta backup på.
 
 Utan skrivare kör du med `PRINTER_TYPE=preview`. Då sparas bongarna bara som bilder i
 `data/tickets/`, och du kan se dem via 👁-knappen i webbgränssnittet.
@@ -71,7 +92,7 @@ Tailscale Funnel. Connectors stödjer inte egna headers, så det kräver också 
 Det är ett naturligt nästa steg att bygga.
 
 MCP-verktyg: `list_tasks`, `add_task`, `update_task`, `complete_task`, `reopen_task`,
-`delete_task`, `preview_morning_tickets`, `print_tickets`.
+`delete_task`, `read_journal`, `preview_morning_tickets`, `print_tickets`.
 
 ## REST-API för andra appar
 
@@ -99,5 +120,8 @@ curl http://server:8080/api/tasks -H "X-API-Key: $KEY"
 | GET    | `/api/tasks/{id}/ticket.png`  | Bongen som bild                              |
 | GET    | `/api/morning`                | Nästa utskriftstid och vilka bongar som kommer |
 | POST   | `/api/morning/print`          | Kör morgonutskriften direkt                  |
+| GET    | `/api/journal`                | Dagboksinlägg, nyast först                   |
+| POST   | `/api/journal`                | Nytt inlägg `{"text": "..."}`, Claude tolkar |
+| POST   | `/api/journal/{id}/undo`      | Ångra det Claude ändrade                     |
 
 Prioritet: 1 = brådskande, 2 = hög, 3 = normal, 4 = låg. Projektet visas som "BORD" på bongen.

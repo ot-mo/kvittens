@@ -3,5 +3,5 @@ uvicorn[standard]==0.54.0
 mcp==2.3.0
 python-escpos[usb]==3.1
 pillow==13.0.0
-qrcode==8.2
+anthropic==2.3.0
 tzdata
