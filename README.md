@@ -33,11 +33,14 @@ skriva uppgifter själv. Ingen API-nyckel behövs, det körs på din vanliga Cla
    kväll. Den sessionen svarar bara, den ändrar inget.
 4. Den bockar av det du gjort, lägger till konkreta nästa steg och bestämmer 1–3 saker
    att fokusera på. Imorgon bitti skrivs de ut som bongar.
-5. Vill du ändra något säger du bara det i chatten.
+5. En vanlig kväll svarar den bara "Morgondagen är planerad.", så att du slipper tänka på
+   morgondagen i förväg. Sammanfattning och dialog kommer en gång i veckan, vid
+   veckogenomgången.
 
-Alla projekt samlas i [`projekt.md`](projekt.md), uppdelade i Aktiva (högst 5), Pausade,
+Alla projekt samlas i `projekt.md`, uppdelade i Aktiva (högst 5), Pausade,
 Idéer och Klara, med vad som räknas som klart och vad nästa steg är. Sessionen uppdaterar
-filen varje kväll och committar och pushar den till main. Berätta om gamla projekt som aldrig varit i
+filen varje kväll. Den är personlig och ligger bara lokalt (den finns i `.gitignore`), och
+saknas den skapas den från mallen i skillen. Berätta om gamla projekt som aldrig varit i
 Claude, så läggs de också till där. En gång i veckan går sessionen igenom äldre och
 arkiverade chattar och föreslår ett projekt som har somnat men är värt att göra klart.
 Systemet ska hjälpa dig göra klart saker, inte börja på nya.

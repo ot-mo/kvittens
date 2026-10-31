@@ -3,3 +3,6 @@ data/
 __pycache__/
 *.pyc
 .venv/
+
+# Personligt projektminne för kvällsgenomgången, ska aldrig till GitHub
+projekt.md
